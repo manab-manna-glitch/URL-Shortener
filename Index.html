@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Go URL Shortener</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <div class="card">
+    <h1>URL Shortener</h1>
+
+    <div class="input-area">
+      <input id="longURL" type="text" placeholder="Paste your long URL here">
+      <button onclick="pasteURL()">Paste</button>
+    </div>
+
+    <button class="short-btn" onclick="shortenURL()">Shorten URL</button>
+
+    <div class="result" id="result" style="display:none;">
+      <h3>Your Short URL</h3>
+      <div class="short-area">
+        <input id="shortURL" readonly>
+        <button onclick="copyURL()">Copy</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    async function pasteURL() {
+      try {
+        const text = await navigator.clipboard.readText()
+        document.getElementById("longURL").value = text
+      } catch {
+        alert("Clipboard access denied")
+      }
+    }
+
+    async function shortenURL() {
+      const longURL = document.getElementById("longURL").value
+      if (!longURL) return alert("Please enter a URL")
+
+      try {
+        const res = await fetch("/shorten", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ url: longURL })
+        })
+
+        if (!res.ok) {
+          alert("Failed to shorten URL")
+          return
+        }
+
+        const data = await res.json()
+        document.getElementById("shortURL").value = window.location.origin + data.short_url
+        document.getElementById("result").style.display = "block"
+      } catch {
+        alert("Failed to connect to server")
+      }
+    }
+
+    async function copyURL() {
+      const url = document.getElementById("shortURL").value
+      await navigator.clipboard.writeText(url)
+      alert("Short URL copied!")
+    }
+
+    document.getElementById("longURL").addEventListener("keypress", function(e) {
+      if (e.key === "Enter") shortenURL()
+    })
+  </script>
+</body>
+</html>
